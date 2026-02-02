@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat with AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        background-color: #d1f9fa;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+        padding: 20px;
+      }
+
+      h1.page-title {
+        text-align: center;
+        font-size: 28px;
+        margin-top: 0px !important; /* Moves title lower */
+        padding-bottom: 0px;
+        color: black;
+        width: 100%;
+      }
+
+      .container {
+        margin-top: 0px !important;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 15px;
+        width: 95%;
+        max-width: 1400px;
+        height: 85vh; /* Fixed height for both containers */
+        border-radius: 8px;
+        padding: 10px;
+        align-items: stretch; /* Ensures both columns have the same height */
+      }
+
+      #paramContainer,
+      #queryContainer {
+        display: flex;
+        flex-direction: column;
+        height: 600px;
+      }
+
+      #paramContainer {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 350px;
+        text-align: left;
+        background-color: #ffd685;
+      }
+
+      #queryContainer {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        background-color: #ffd685;
+      }
+
+      .input-group {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        justify-content: flex-start; /* Aligns button to the right */
+      }
+
+      input[type="text"] {
+        width: 75%;
+        padding: 10px;
+        font-size: 18px;
+        border: 2px solid #ccc;
+        border-radius: 6px;
+        resize: none;
+      }
+
+      .input-group button {
+        flex-shrink: 0;
+      }
+      button {
+        padding: 8px 12px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .response-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        margin-top: 0px;
+      }
+
+      #responseDisplay {
+        min-height: 250px; /* Prevents shrinking */
+        height: auto;
+        overflow-y: auto;
+        border: 2px solid #ccc;
+        padding: 15px;
+        background-color: white;
+        border-radius: 6px;
+        margin-top: 0px;
+        text-align: left;
+      }
+
+      #logoutContainer {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+      }
+
+      #logoutButton {
+        padding: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        background-color: #ffa500;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #logoutButton:hover {
+        background-color: #cc0000;
+      }
+
+      #responseDisplay,
+      #tokenDisplay {
+        width: 100%;
+        max-width: 700px;
+      }
+
+      button.clear-button {
+        background-color: #ffa500; /* Orange color */
+      }
+
+      button.clear-button:hover {
+        background-color: #e69500; /* Darker orange on hover */
+      }
+
+      .param-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .param-group label {
+        flex: 1; /* Allows label to take available space */
+      }
+
+      .param-group input[type="range"] {
+        flex: 2; /* Ensures slider takes up more space */
+        margin: 0 10px;
+      }
+
+      .param-group output {
+        flex: 0.5; /* Ensures output stays in the same line */
+        text-align: right;
+        min-width: 40px; /* Prevents shifting */
+      }
+
+      #queryContainer h2 {
+        margin-top: 0px;
+        margin-bottom: 30px;
+      }
+
+      #nextPageButton:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+      }
+      .container-wrapper {
+        background-color: #fff3b0;
+      }
+
+      #chatModel {
+        font-size: 14px;
+        padding: 6px;
+        width: fit-content; /* shrink to fit content */
+        max-width: 100%;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+      }
+      .nav-button-container {
+        display: flex;
+        justify-content: flex-end; /* Aligns the button to the right */
+        width: 95%;
+        position: absolute;
+        padding-right: -50px;
+        margin-top: 650px;
+        margin-right: 30px;
+        right: 100px;
+      }
+
+      #nextPageButton {
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        transition:
+          background 0.3s,
+          transform 0.2s;
+        outline: none;
+      }
+      #backButtonContainer {
+        position: absolute;
+        top: 10px;
+        left: 20px;
+      }
+
+      #backButton {
+        padding: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        background-color: #28a745; /* Green color */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #backButton:hover {
+        background-color: #218838; /* Darker green on hover */
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="page-title">Chat with AI</h1>
+
+    <div id="logoutContainer">
+      <button id="logoutButton" onclick="logout()">Log Out</button>
+    </div>
+
+    <div class="container">
+      <div id="paramContainer">
+        <!-- <p><b>Choose a Model:</b></p>
+        <select id="chatModel"> -->
+        <!-- <option value="gpt2">GPT-2</option> -->
+        <!-- <option value="gpt2-medium" selected>GPT-2 Medium</option> -->
+        <!-- <option value="gpt-neo">GPT-Neo 1.3B</option> -->
+        <!-- <option value="flan-t5-large">Flan-T5 Large</option> -->
+        <!-- <option value="SmolLM-360M">SmolLM (360M)</option> -->
+        <!-- <option value="TinyLlama-1.1B">TinyLlama (1.1B)</option> -->
+        <!-- <option value="Qwen2.5-1.5B">Qwen2 (1.5B)</option> -->
+        <!-- </select> -->
+        <h2>Parameter Guide</h2>
+        <p>
+          <b>Temperature:</b> Controls how random AI's answers are. <br />🔽 Low
+          = AI plays it safe. It chooses words that are most likely <br />🔼
+          High = AI is more creative and random. It might pick less expected
+          words.
+        </p>
+        <div class="param-group">
+          <label for="chatTemperature">Temperature:</label>
+          <input
+            type="range"
+            id="chatTemperature"
+            name="temperature"
+            min="0"
+            max="2"
+            step="0.1"
+            value="0.7"
+            oninput="this.nextElementSibling.value = this.value"
+          />
+          <output>0.7</output>
+        </div>
+        <p>
+          <b>Top-P:</b> Limits AI's word choices. <br />🔽 Low = If p=0.1 AI
+          picks from the top 10% most likely words only. <br />🔼 High = If p=
+          0.9 AI considers more word possibilities (up to the top 90%).
+        </p>
+        <div class="param-group">
+          <label for="chatTopP">Top-P:</label>
+          <input
+            type="range"
+            id="chatTopP"
+            name="top_p"
+            min="0"
+            max="1"
+            step="0.1"
+            value="0.9"
+            oninput="this.nextElementSibling.value = this.value"
+          />
+          <output>0.9</output>
+        </div>
+      </div>
+
+      <div id="queryContainer">
+        <h2>Ask AI a question</h2>
+        <div class="input-group">
+          <input
+            type="text"
+            id="queryInput"
+            name="query"
+            placeholder="Type your question here..."
+            required
+            autocomplete="off"
+          />
+          <button id="submitBtn" onclick="sendQuery()">Submit</button>
+          <button class="clear-button" onclick="clearQuery()">Clear</button>
+        </div>
+        <div class="response-container">
+          <h3>AI Response:</h3>
+          <div id="responseDisplay"></div>
+        </div>
+      </div>
+    </div>
+    <div id="backButtonContainer">
+      <button id="backButton" onclick="goBack()">← Back to Prediction</button>
+    </div>
+    <script>
+      localStorage.setItem("user_id", "{{ user_id }}");
+
+      function logout() {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+          return (window.location.href = "/");
+        }
+
+        // 1) trigger file download
+        const link = document.createElement("a");
+        link.href = `/download_user_data/${userId}`;
+        link.download = `${userId}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 2) clear session and go home
+        localStorage.removeItem("user_id");
+        window.location.href = "/";
+      }
+
+      function clearQuery() {
+        document.getElementById("queryInput").value = "";
+      }
+
+      function sendQuery() {
+        const query = document.getElementById("queryInput").value;
+        const temperature = parseFloat(
+          document.getElementById("chatTemperature").value,
+        );
+        const top_p = parseFloat(document.getElementById("chatTopP").value);
+        const model = "SmolLM-360M";
+        const userId = localStorage.getItem("user_id");
+
+        if (!query || !userId || userId === "null") {
+          alert("Please enter a question and make sure you're logged in.");
+          return;
+        }
+
+        document.getElementById("responseDisplay").innerHTML = "Thinking...";
+
+        fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: userId,
+            query: query,
+            temperature: temperature,
+            top_p: top_p,
+            model: model,
+          }),
+        })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("Server returned error: " + res.status);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            document.getElementById("responseDisplay").innerHTML = data.answer;
+            // Attention data fetch call removed
+          })
+          .catch((err) => {
+            console.error("Error in sendQuery:", err);
+            alert("Something went wrong. Try again.");
+          });
+      }
+
+      // renderAttentionChart function removed
+
+      async function submitChatReflection() {
+        const q6 = document.getElementById("chat_q1").value.trim();
+        const q7 = document.getElementById("chat_q2").value.trim();
+        const q8 = document.getElementById("chat_q3").value.trim();
+        const userId = localStorage.getItem("user_id");
+
+        if (!q6 && !q7 && !q8) {
+          alert("Please answer at least one question before logging out.");
+          return;
+        }
+
+        try {
+          const response = await fetch("/save_reflection", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: userId,
+              reflection_answer: { q6, q7, q8 },
+            }),
+          });
+
+          if (response.ok) {
+            // Trigger download
+            const downloadLink = document.createElement("a");
+            downloadLink.href = `/download_user_data/${userId}`;
+            downloadLink.download = `${userId}.json`;
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            // Clear user ID and redirect
+            setTimeout(() => {
+              localStorage.removeItem("user_id");
+              window.location.href = "/";
+            }, 1000); // wait a second to ensure download starts
+          } else {
+            alert("Failed to save reflection.");
+          }
+        } catch (err) {
+          console.error("Error submitting reflection:", err);
+          alert("Something went wrong. Please try again.");
+        }
+      }
+
+      function goBack() {
+        const userId = localStorage.getItem("user_id");
+        if (userId) {
+          window.location.href = `/home?user_id=${userId}`;
+        } else {
+          // Fallback in case user_id is missing
+          alert("Could not find user session. Redirecting to login.");
+          window.location.href = "/";
+        }
+      }
+    </script>
+  </body>
+</html>

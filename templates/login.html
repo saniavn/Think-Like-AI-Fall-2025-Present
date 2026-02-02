@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Login - AI Learning</title>
+    <style>
+      /* General Page Styles */
+      body {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        background-color: #d1f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+        margin: 0;
+      }
+
+      /* Container Styling */
+      .container {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        width: 650px;
+        background-color: #ffd685;
+        width: 45%;
+        margin-top: 0;
+      }
+
+      /* Header Styling */
+      h2 {
+        color: black;
+        margin-bottom: 10px;
+      }
+
+      /* Fun Fact Section */
+      .fun-fact {
+        background: #f0f8ff;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 20px;
+        color: black;
+        margin-bottom: 15px;
+        text-align: left;
+      }
+
+      /* Horizontal Form Layout */
+      .form-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 15px;
+      }
+
+      .form-group input,
+      .form-group select {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid #ccc;
+        border-radius: 6px;
+        font-size: 16px;
+        text-align: center;
+      }
+
+      button {
+        width: 150px;
+        padding: 8px 12px;
+        font-size: 18px;
+        border: none;
+        border-radius: 6px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        transition: background 0.3s;
+        display: block;
+        margin: 10px auto;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .page-title {
+        font-size: 48px;
+        font-weight: bold;
+        color: Black;
+        text-align: center;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        width: 100%;
+        position: absolute;
+        top: 2%;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .logo {
+        width: 125px;
+        height: auto; /* Maintain aspect ratio */
+        margin-bottom: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .form-group input,
+      .form-group select {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #ccc;
+        border-radius: 6px;
+        font-size: 20px;
+        text-align: center;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 600px) {
+        .form-group {
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .form-group {
+          flex-direction: column;
+        }
+
+        .page-title {
+          font-size: 28px;
+          top: 2%;
+        }
+
+        h2 {
+          font-size: 20px;
+        }
+
+        .fun-fact {
+          font-size: 16px;
+        }
+
+        button {
+          font-size: 16px;
+          width: 100%;
+        }
+      }
+      .page-title {
+        width: 450px;
+        font-weight: bold;
+        color: Black;
+        text-align: center;
+        margin-top: 0px;
+        margin-bottom: 0px;
+        position: absolute;
+        /* top: 2%;
+      left: 50%; */
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      src="{{ url_for('static', filename='images/Gemini01.png') }}"
+      alt="Gemini Logo"
+      class="page-title"
+    />
+
+    <div class="container">
+      <h2>
+        Welcome to Think Like
+        <img
+          src="{{ url_for('static', filename='images/ChatGPT1.png') }}"
+          alt="AI"
+          style="vertical-align: middle; width: 50px; height: auto"
+        />!
+      </h2>
+
+      <div class="fun-fact">
+        <p>
+          Think Like AI helps you learn why chatbots like ChatGPT predict
+          certain words.
+        </p>
+        <p>
+          Fun Fact: Did you know? The first chatbot, <b>ELIZA</b>, was created
+          in <b>1966</b>.
+        </p>
+      </div>
+
+      <p>Enter your infromation and explore!</p>
+
+      <form method="POST">
+        <div class="form-group">
+          <input
+            type="text"
+            name="student_id"
+            placeholder="Enter Student ID"
+            required
+            autocomplete="off"
+            style="width: 100%"
+          />
+        </div>
+
+        <button type="button" id="lets-play-btn">Let's Play</button>
+      </form>
+    </div>
+
+    <div
+      id="questionModal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          width: 80%;
+          max-width: 500px;
+        "
+      >
+        <h3>Quick Questions</h3>
+        <label
+          >1.Have you used ChatGPT or another chatbot before? If yes, what was
+          it called?</label
+        ><br />
+        <textarea
+          id="q1"
+          rows="3"
+          style="width: 100%; margin-bottom: 10px"
+        ></textarea>
+
+        <button onclick="submitAnswers()">Submit Answers</button>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("lets-play-btn")
+        .addEventListener("click", async function () {
+          const form = document.querySelector("form");
+          const studentId = form
+            .querySelector('[name="student_id"]')
+            .value.trim();
+
+          // 1. Validation
+          if (!studentId) {
+            alert("Please enter your Student ID before continuing.");
+            return;
+          }
+
+          const formData = new FormData(form);
+
+          try {
+            const response = await fetch("/login", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.redirected) {
+              const urlParams = new URLSearchParams(
+                new URL(response.url).search,
+              );
+              const userId = urlParams.get("user_id");
+
+              if (userId) {
+                localStorage.setItem("user_id", userId);
+              }
+
+              window.location.href = response.url;
+            } else {
+              console.log("Response received but no redirect occurred.");
+            }
+          } catch (error) {
+            console.error("Login error:", error);
+            alert("An error occurred. Please try again.");
+          }
+        });
+    </script>
+  </body>
+</html>

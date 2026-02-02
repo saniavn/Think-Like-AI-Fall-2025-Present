@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - AI Learning</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #d1f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            margin: 0;
+            flex-direction: column;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            background-color: #ffd685;
+        }
+        h2 {
+            color: black;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .mode-button {
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            text-decoration: none; /* For <a> tag */
+            display: block;
+        }
+        .study-mode {
+            background-color: #007BFF; /* Blue */
+        }
+        .study-mode:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .auto-mode {
+            background-color: #28a745; /* Green */
+        }
+        .auto-mode:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+        .page-title {
+            width: 450px;
+            font-weight: bold;
+            color: Black;
+            text-align: center;
+            margin-bottom: 20px; /* Added margin */
+            transform: translateX(-50%);
+            position: absolute;
+            top: 5%;
+            left: 50%;
+        }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='images/Gemini01.png') }}" alt="Gemini Logo" class="page-title">
+
+    <div class="container">
+        <h2>How do you want to start?</h2>
+        <div class="button-group">
+            <a href="{{ url_for('study_login') }}" class="mode-button study-mode">
+                User Study Mode
+            </a>
+            
+            <a href="{{ url_for('auto_login') }}" class="mode-button auto-mode">
+                Guest Mode (Auto Login)
+            </a>
+        </div>
+    </div>
+</body>
+</html>

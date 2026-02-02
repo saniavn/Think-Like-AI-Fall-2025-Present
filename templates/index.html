@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>How AI Thinks: Next Word Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+                  body {
+                    font-family: "Comic Sans MS", cursive, sans-serif;
+                    background-color: #d1f9fa; /* Light blue background */
+                    background-image: url("{{ url_for("static", filename="images/Nov141111.jpg") }}");
+                    background-size: cover;
+                    background-repeat: no-repeat;
+                    color: black;
+                    padding: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    height: 100vh; /* Full viewport height */
+                    overflow: hidden;
+                  }
+                  h1.page-title {
+                    text-align: center;
+                    font-size: 28px;
+                    margin-top: 20px;
+                    padding-bottom: 0px;
+                    color: black;
+                    width: 100%;
+                  }
+                  h2 {
+                    font-size: 22px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin-bottom: 10px;
+                  }
+                  .container {
+                    display: grid;
+                    grid-template-columns: 1.3fr 2.2fr;
+                    gap: 20px;
+                    width: 95%;
+                    max-width: 1400px;
+                    height: 85vh;
+                    border-radius: 8px;
+                    padding: 0px;
+                    align-items: flex-start;
+                  }
+                  #inputContainer,
+                  #chartContainer {
+                    display: flex;
+                    flex-direction: column;
+                    padding: 15px;
+                    background-color: #ffd685;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    height: 600px;
+                    overflow: hidden;
+                  }
+                  #inputContainer {
+                    align-items: left;
+                    margin-left: -38px;
+                  }
+                  #chartContainer {
+                    align-items: center;
+                    justify-content: flex-start;
+                    text-align: center;
+                  }
+                  .next-button-container {
+                    display: flex;
+                    justify-content: flex-end;
+                    width: 95%;
+                    position: absolute;
+                    padding-right: -50px;
+                    margin-top: 710px;
+                    margin-right: 40px;
+                    right: 40px;
+                  }
+                  #nextPageButton {
+                    padding: 12px 20px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 8px;
+                    background-color: #007bff;
+                    color: white;
+                    cursor: pointer;
+                    transition: background 0.3s, transform 0.2s;
+                    outline: none;
+                  }
+                  #nextPageButton:hover {
+                    background-color: #0056b3;
+                    transform: scale(1.05);
+                  }
+                  textarea {
+                    width: 90%;
+                    height: 100px;
+                    padding: 10px;
+                    font-size: 16px;
+                    border: 2px solid #ffe08a;
+                    border-radius: 4px;
+                    overflow: auto;
+                    resize: none;
+                  }
+                  button {
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    margin-top: 10px;
+                    border: none;
+                    border-radius: 4px;
+                    background-color: #007bff;
+                    color: white;
+                    cursor: pointer;
+                  }
+                  button:hover {
+                    background-color: #0056b3;
+                  }
+                  button:disabled {
+                    background-color: #cccccc;
+                    cursor: not-allowed;
+                  }
+                  button:disabled:hover {
+                    background-color: #cccccc;
+                  }
+                  select {
+                    width: auto;
+                    padding: 8px 10px;
+                    font-size: 14px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    background-color: white;
+                    color: black;
+                    margin-top: 0;
+                    margin-bottom: 0;
+                  }
+                  .model-select-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                  }
+
+                  .model-select-group label {
+                    display: inline; /* Make it sit on the same line */
+                    margin-bottom: 0;
+                    font-weight: bold;
+                  }
+
+                  #chartBox {
+                    width: 95%;
+                    max-width: 1000px;
+                    height: 400px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                    padding: 15px;
+                    gap: 20px;
+                    margin-bottom: 10px;
+                    box-sizing: border-box;
+                  }
+                  .chart-wrapper {
+                    flex-grow: 1;
+                    height: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: relative;
+                  }
+                  .left-parameter-box {
+                    width: 90%;
+                    max-width: 500px;
+                    background-color: #ffffff;
+                    border: 2px solid #ffe08a;
+                    border-radius: 8px;
+                    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.15);
+                    padding: 15px;
+                    margin-bottom: 10px;
+                  }
+                  .parameter-group {
+                    margin-bottom: 15px;
+                  }
+                  .parameter-control-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  }
+                  .parameter-control-row label {
+                    font-weight: bold;
+                    font-size: 14px;
+                  }
+                  .parameter-explanation {
+                    font-size: 13px;
+                    color: #333;
+                    text-align: left;
+                    line-height: 1.3;
+                    margin: 0;
+                    padding-left: 5px;
+                  }
+                  .slider-wrapper {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                  }
+                  .slider-wrapper input[type="range"] {
+                    width: 260px;
+                  }
+                  .slider-value {
+                    font-weight: bold;
+                    min-width: 30px;
+                    text-align: left;
+                  }
+                  #inputContainer .form-group {
+                    margin-bottom: 15px;
+                  }
+                  #inputContainer .form-group label {
+                    margin-bottom: 5px;
+                    display: block;
+                    font-size: 14px;
+                  }
+                  #aiButton {
+                    margin-top: 0;
+                    margin-bottom: 10px;
+                  }
+                  .parameter-box-title {
+                    display: block;
+                    width: 90%;
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin-bottom: 5px;
+                  }
+                  .predict-button-container {
+                    display: flex;
+                    justify-content: center;
+                    width: 100%;
+                    margin-top: -20px;
+                    margin-bottom: 20px;
+                    gap: 15px;
+                  }
+                  #clearButton {
+              background-color: black;
+              color: white;
+              border: 1px solid #333;
+            }
+
+            #clearButton:hover {
+              background-color: #333333;
+              transform: scale(1.02); /
+            }
+                  #logoutContainer {
+                    position: absolute;
+                    top: 10px;
+                    right: 20px;
+                  }
+
+                  #logoutButton {
+                    padding: 10px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    background-color: #ffa500;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                  }
+
+                  #logoutButton:hover {
+                    background-color: #cc0000;
+                  }
+
+
+      canvas {
+          transition: all 0.5s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="page-title">
+      What’s
+      <img
+        src="{{ url_for('static', filename='images/Gemini2.png') }}"
+        alt="AI"
+        style="vertical-align: middle; width: 60px; height: auto; margin: 0 4px"
+      />
+      Thinking? Change It and Find Out!
+    </h1>
+    <div id="logoutContainer">
+      <button id="logoutButton" onclick="logout()">Log Out</button>
+    </div>
+    <div class="container">
+      <div id="inputContainer">
+        <h2>Type & see what AI thinks comes next!</h2>
+
+        <form action="/predict" method="post">
+          <input
+            type="hidden"
+            id="input_source"
+            name="input_source"
+            value="typed"
+          />
+          <!-- <div class="form-group model-select-group">
+            <label for="model-select">Choose your AI model:</label>
+            <select id="model-select" name="model"> -->
+          <!-- <option value="gpt2">GPT-2 (Small)</option>
+                        <option value="gpt2-medium" selected>GPT-2 (Medium)</option>
+                        <option value="gpt-neo">GPT-Neo 1.3B </option> -->
+          <!-- <option value="flan-t5-large">Flan-T5 (Large)</option> -->
+          <!-- <option value="TinyLlama-1.1B" selected>TinyLlama 1.1B</option> -->
+          <!-- <option value="SmolLM-360M">SmolLM 360M</option> -->
+          <input type="hidden" name="model" value="SmolLM-360M" />
+          <!-- <option value="Qwen2.5-1.5B">Qwen 2.5 1.5B</option> -->
+          <!-- </select>
+          </div> -->
+
+          <div class="form-group">
+            <label for="userTextInput"
+              >Enter your sentence <b>(context)</b> here:</label
+            >
+            <textarea
+              id="userTextInput"
+              name="text"
+              placeholder="Type your sentence..."
+              required
+            ></textarea>
+          </div>
+          <div class="predict-button-container">
+            <button type="submit" id="predictButton">
+              Predict the Next Word
+            </button>
+            <button type="button" id="clearButton" onclick="clearText()">
+              Clear Text
+            </button>
+          </div>
+          <label class="parameter-box-title">Adjust Parameters</label>
+          <div class="left-parameter-box">
+            <div class="parameter-group">
+              <div class="parameter-control-row">
+                <label>Temperature:</label>
+                <div class="slider-wrapper">
+                  <input
+                    type="range"
+                    id="temperature"
+                    name="temperature"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value="1"
+                    oninput="this.nextElementSibling.innerText = this.value"
+                  />
+                  <span class="slider-value">1</span>
+                </div>
+              </div>
+              <p class="parameter-explanation">
+                Controls how random AI's answers are.
+                <br />Low = AI plays it safe. It chooses words that are most
+                likely. <br />High = AI is more creative and random. It might
+                pick less expected words.
+              </p>
+            </div>
+
+            <div class="parameter-group">
+              <div class="parameter-control-row">
+                <label>Top-P:</label>
+                <div class="slider-wrapper">
+                  <input
+                    type="range"
+                    id="pValue"
+                    name="p_value"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value="0.9"
+                    oninput="this.nextElementSibling.innerText = this.value"
+                  />
+                  <span class="slider-value">0.9</span>
+                </div>
+              </div>
+              <p class="parameter-explanation">
+                Limits AI's word choices.
+                <br />Low = If p=0.1 AI picks from the top 10% most likely words
+                only. <br />High = If p= 0.9 AI considers more word
+                possibilities (up to the top 90%).
+              </p>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div id="chartContainer">
+        <h2>Look at AI’s guesses</h2>
+
+        <p
+          id="aiOptionsNote"
+          style="
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            font-style: italic;
+            color: green;
+            margin-top: -5px;
+            margin-bottom: 10px;
+          "
+        >
+          *Note: You have three options — (1) Click on a word from the bar
+          chart, (2) Type your own word, or (3) Click on Spin to choose a word.*
+        </p>
+        <button
+          type="button"
+          id="aiButton"
+          onclick="autoComplete()"
+          style="display: none"
+        >
+          Spin to Choose
+        </button>
+        <div id="chartBox">
+          <div class="chart-wrapper">
+            <canvas id="resultChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="next-button-container">
+      <button id="nextPageButton" onclick="goToChat()">Next →</button>
+    </div>
+
+    <script>
+      let originalTokens = [];
+      let originalProbabilities = [];
+      let inputSource = "typed";
+      let pieChartInstance = null;
+
+      localStorage.setItem("user_id", "{{ user_id }}");
+      function logout() {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+          return (window.location.href = "/");
+        }
+
+        const link = document.createElement("a");
+        link.href = `/download_user_data/${userId}`;
+        link.download = `${userId}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        localStorage.removeItem("user_id");
+        window.location.href = "/";
+      }
+      function enablePredictButton() {
+        const predictButton = document.getElementById("predictButton");
+        if (predictButton) {
+          predictButton.disabled = false;
+        }
+      }
+
+      document
+        .getElementById("userTextInput")
+        .addEventListener("input", function () {
+          inputSource = "typed";
+          document.getElementById("input_source").value = "typed";
+          enablePredictButton();
+        });
+
+      function goToChat() {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+          console.error("No user_id found! Redirecting to login.");
+          window.location.href = "/";
+          return;
+        }
+        window.location.href = `/chat?user_id=${userId}`;
+        //document.getElementById("questionModal").style.display = "flex"; this is for modal
+      }
+
+      async function submitAnswers() {
+        const q5 = document.getElementById("q5").value.trim();
+        const userId = localStorage.getItem("user_id");
+
+        if (!q5) {
+          alert("Please answer all questions before continuing.");
+          return;
+        }
+
+        try {
+          const response = await fetch("/save_questions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId, q5: q5 }),
+          });
+          if (!response.ok) throw new Error("Failed to save answers");
+          window.location.href = `/chat?user_id=${userId}`;
+        } catch (error) {
+          console.error("Error saving answers:", error);
+          alert("There was an error saving your answers.");
+        }
+      }
+
+      // Disable button immediately when clicked
+      async function triggerPrediction() {
+        const predictButton = document.getElementById("predictButton");
+        predictButton.disabled = true; // Disable button immediately
+
+        const form = document.querySelector("form"); // Get the form element
+        const formData = new FormData(form); // Use the form element to get data
+        let userId = localStorage.getItem("user_id");
+        if (userId) formData.append("user_id", userId);
+
+        try {
+          const response = await fetch("/predict", {
+            method: "POST",
+            body: formData,
+          });
+          const result = await response.json();
+
+          if (result.predicted_tokens && result.predicted_tokens.length > 0) {
+            originalTokens = result.predicted_tokens;
+            originalProbabilities = result.probabilities;
+            updateChartWithNewParameters();
+            document.getElementById("aiOptionsNote").style.display = "block";
+            document.getElementById("aiButton").style.display = "inline-block";
+          } else {
+            alert("No predictions available. Try adjusting the Top-P value.");
+            enablePredictButton();
+          }
+        } catch (error) {
+          console.error("Prediction error:", error);
+          alert("An error occurred while fetching predictions.");
+          enablePredictButton();
+        }
+      }
+
+      // UPDATED ONSUBMIT HANDLER
+      document.querySelector("form").onsubmit = function (event) {
+        event.preventDefault();
+        triggerPrediction();
+      };
+
+      function updateChartWithNewParameters() {
+        if (originalTokens.length === 0) return;
+
+        const temperature = Math.max(
+          parseFloat(document.getElementById("temperature").value),
+          0.01,
+        );
+        const pValue = parseFloat(document.getElementById("pValue").value);
+
+        let tempProbs = originalProbabilities.map((p) =>
+          Math.exp(Math.log(p + 1e-9) / temperature),
+        );
+        const sumTempProbs = tempProbs.reduce((a, b) => a + b, 0);
+        let normalizedProbs = tempProbs.map((p) => p / sumTempProbs);
+
+        let combined = originalTokens
+          .map((token, i) => ({ token, prob: normalizedProbs[i] }))
+          .sort((a, b) => b.prob - a.prob);
+
+        let cumulativeProb = 0;
+        const filteredCombined = [];
+        for (const item of combined) {
+          filteredCombined.push(item);
+          cumulativeProb += item.prob;
+          if (cumulativeProb >= pValue) break;
+        }
+
+        if (filteredCombined.length === 0 && combined.length > 0) {
+          filteredCombined.push(combined[0]);
+        }
+
+        const finalTokens = filteredCombined.map((item) => item.token);
+        const finalProbs = filteredCombined.map((item) => item.prob);
+        const finalSum = finalProbs.reduce((a, b) => a + b, 0);
+        const renormalizedProbs = finalProbs.map((p) => p / finalSum);
+
+        renderChart(finalTokens, renormalizedProbs);
+      }
+
+      document
+        .getElementById("temperature")
+        .addEventListener("input", updateChartWithNewParameters);
+      document
+        .getElementById("pValue")
+        .addEventListener("input", updateChartWithNewParameters);
+
+      function formatToken(token) {
+        let cleaned = token;
+
+        // Fix for weird UTF-8 artifacts (mojibake)
+        cleaned = cleaned.replace(/âĢİ/g, "'");
+        cleaned = cleaned.replace(/âĢĻ/g, "'");
+        cleaned = cleaned.replace(/âĢĶ/g, '"');
+        cleaned = cleaned.replace(/âĢĿ/g, '"');
+        cleaned = cleaned.replace(/âĢĵ/g, "...");
+        cleaned = cleaned.replace(/âĢ-/g, "-");
+        cleaned = cleaned.replace(/âĢĶ/g, "-");
+        cleaned = cleaned.replace(/âĢ/g, "'");
+
+        return cleaned;
+      }
+      function renderChart(tokens, probabilities) {
+        // We filter out empty tokens (like ' ') BEFORE drawing the chart
+        const filteredData = [];
+        for (let i = 0; i < tokens.length; i++) {
+          const formatted = formatToken(tokens[i]);
+          // Only keep tokens that are NOT empty after formatting
+          if (formatted.trim() !== "") {
+            filteredData.push({
+              label: formatted,
+              prob: probabilities[i] * 100, // Convert to percent here
+            });
+          }
+        }
+        // Extract the filtered labels and probabilities
+        const finalLabels = filteredData.map((d) => d.label);
+        const finalProbsPercent = filteredData.map((d) => d.prob);
+
+        if (window.barChart && window.pieChartInstance) {
+          // Update existing charts with the *filtered* data
+          window.barChart.data.labels = finalLabels;
+          window.barChart.data.datasets[0].data = finalProbsPercent;
+          window.barChart.options.scales.y.max = 100;
+          window.barChart.update();
+
+          window.pieChartInstance.data.labels = finalLabels;
+          window.pieChartInstance.data.datasets[0].data = finalProbsPercent;
+          window.pieChartInstance.update();
+        } else {
+          // Create new charts if they don't exist
+          if (window.barChart) window.barChart.destroy();
+          if (window.pieChartInstance) window.pieChartInstance.destroy();
+
+          const barCtx = document
+            .getElementById("resultChart")
+            .getContext("2d");
+          const pieCtx = document.getElementById("pieChart").getContext("2d");
+
+          const onChartClick = function (evt, item) {
+            if (item.length) {
+              const index = item[0].index;
+              const selectedWord = this.data.labels[index];
+              const textBox = document.getElementById("userTextInput");
+
+              textBox.value += selectedWord;
+
+              document.getElementById("input_source").value = "clicked";
+              triggerPrediction();
+            }
+          };
+          // onHover function to change cursor
+          const onChartHover = (event, chartElement) => {
+            const canvas = event.native.target;
+            canvas.style.cursor =
+              chartElement.length > 0 ? "pointer" : "default";
+          };
+
+          const percentTooltip = {
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || context.label || "";
+                if (label) {
+                  label += ": ";
+                }
+                let value = context.parsed.y || context.parsed || 0;
+                label += value.toFixed(2) + "%";
+                return label;
+              },
+            },
+          };
+
+          window.barChart = new Chart(barCtx, {
+            type: "bar",
+            data: {
+              // Use the *filtered* data
+              labels: finalLabels,
+              datasets: [
+                {
+                  label: "Probability %",
+                  data: finalProbsPercent,
+                  backgroundColor: "rgba(54, 162, 235, 0.2)",
+                  borderColor: "rgba(54, 162, 235, 1)",
+                  hoverBackgroundColor: "rgba(54, 162, 235, 0.6)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              layout: {
+                padding: {
+                  bottom: 40,
+                },
+              },
+              plugins: {
+                title: { display: true, text: "Bar Chart" },
+                tooltip: percentTooltip,
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    autoSkip: false,
+                    maxRotation: 45,
+                    minRotation: 45,
+                  },
+                },
+                y: { beginAtZero: true, min: 0.1, max: 100 },
+              },
+              onClick: onChartClick, // Use the updated onChartClick
+              onHover: onChartHover,
+            },
+          });
+
+          const pieColors = [
+            "#FF6384",
+            "#36A2EB",
+            "#FFCE56",
+            "#4BC0C0",
+            "#9966FF",
+            "#FF9F40",
+            "#C9CBCF",
+            "#E7E9ED",
+            "#77DD77",
+            "#FDFD96",
+          ];
+
+          window.pieChartInstance = new Chart(pieCtx, {
+            type: "pie",
+            data: {
+              // Use the *filtered* data
+              labels: finalLabels,
+              datasets: [
+                {
+                  label: "Probability",
+                  data: finalProbsPercent,
+                  backgroundColor: pieColors,
+                  hoverOffset: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                title: { display: true, text: "Pie Chart" },
+                tooltip: percentTooltip,
+              },
+              onClick: onChartClick, // Use the updated onChartClick
+              onHover: onChartHover,
+            },
+          });
+        }
+      }
+
+      function spintoChoose(tokens, probabilities, temperature, top_p) {
+        let rand = Math.random();
+        let cumulative = 0;
+
+        // Simple Weighted Spin
+        for (let i = 0; i < probabilities.length; i++) {
+          cumulative += probabilities[i];
+          if (rand <= cumulative) {
+            return tokens[i];
+          }
+        }
+        return tokens[0]; // Fallback
+      }
+
+      async function autoComplete() {
+        if (!window.barChart) {
+          alert("Please generate predictions first!");
+          return;
+        }
+
+        let tokens = window.barChart.data.labels;
+        let probabilitiesPercent = window.barChart.data.datasets[0].data;
+        let probabilities = probabilitiesPercent.map((p) => p / 100.0);
+
+        if (tokens.length === 0) {
+          alert("No predictions available for auto-completion!");
+          return;
+        }
+
+        let temperature = parseFloat(
+          document.getElementById("temperature").value,
+        );
+        let pValue = parseFloat(document.getElementById("pValue").value);
+        let selectedWord = spintoChoose(
+          tokens,
+          probabilities,
+          temperature,
+          pValue,
+        );
+
+        // handling the splited tokens for the words that are broken into pieces
+        if (selectedWord) {
+          let textBox = document.getElementById("userTextInput");
+
+          textBox.value += selectedWord;
+
+          document.getElementById("input_source").value = "auto-selected";
+          triggerPrediction();
+        } else {
+          alert("Error selecting a word!");
+        }
+      }
+      function resetPredictionUI() {
+        originalTokens = [];
+        originalProbabilities = [];
+
+        if (window.barChart) {
+          window.barChart.destroy();
+          window.barChart = null;
+        }
+        if (window.pieChartInstance) {
+          window.pieChartInstance.destroy();
+          window.pieChartInstance = null;
+        }
+
+        enablePredictButton();
+
+        document.getElementById("aiOptionsNote").style.display = "none";
+        document.getElementById("aiButton").style.display = "none";
+      }
+      function clearText() {
+        document.getElementById("userTextInput").value = "";
+
+        document.getElementById("input_source").value = "typed";
+
+        resetPredictionUI();
+      }
+
+      // Set the example text
+      window.onload = function () {
+        const textBox = document.getElementById("userTextInput");
+
+        if (textBox.value.trim() === "") {
+          textBox.value = "Sophie says the cat";
+
+          document.getElementById("input_source").value = "typed";
+
+          triggerPrediction();
+        }
+      };
+    </script>
+  </body>
+</html>
