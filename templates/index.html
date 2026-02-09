@@ -100,6 +100,16 @@
                     overflow: auto;
                     resize: none;
                   }
+                  /* button, select {
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    margin-top: 10px;
+                    border: none;
+                    border-radius: 4px;
+                    background-color: #007BFF;
+                    color: white;
+                    cursor: pointer;
+                } */
                   button {
                     padding: 10px 20px;
                     font-size: 16px;
@@ -283,7 +293,7 @@
         alt="AI"
         style="vertical-align: middle; width: 60px; height: auto; margin: 0 4px"
       />
-      Thinking? Change It and Find Out!
+      Thinking? Change the Prompt and Find Out!
     </h1>
     <div id="logoutContainer">
       <button id="logoutButton" onclick="logout()">Log Out</button>
@@ -500,7 +510,7 @@
         }
       }
 
-      // Disable button immediately when clicked
+      // NEW REUSABLE FUNCTION
       async function triggerPrediction() {
         const predictButton = document.getElementById("predictButton");
         predictButton.disabled = true; // Disable button immediately
@@ -638,6 +648,7 @@
             .getContext("2d");
           const pieCtx = document.getElementById("pieChart").getContext("2d");
 
+          //updated to only show the prompt
           const onChartClick = function (evt, item) {
             if (item.length) {
               const index = item[0].index;
@@ -768,10 +779,22 @@
         }
         return tokens[0]; // Fallback
       }
-
       async function autoComplete() {
+        const spinButton = document.getElementById("aiButton");
+
+        //Disable button immediately so they can't click twice
+        if (spinButton) {
+          spinButton.disabled = true;
+          spinButton.style.cursor = "not-allowed";
+        }
+
         if (!window.barChart) {
           alert("Please generate predictions first!");
+          // Re-enable if we exit early
+          if (spinButton) {
+            spinButton.disabled = false;
+            spinButton.style.cursor = "pointer";
+          }
           return;
         }
 
@@ -781,32 +804,50 @@
 
         if (tokens.length === 0) {
           alert("No predictions available for auto-completion!");
+          if (spinButton) {
+            spinButton.disabled = false;
+            spinButton.style.cursor = "pointer";
+          }
           return;
         }
 
-        let temperature = parseFloat(
-          document.getElementById("temperature").value,
-        );
-        let pValue = parseFloat(document.getElementById("pValue").value);
-        let selectedWord = spintoChoose(
-          tokens,
-          probabilities,
-          temperature,
-          pValue,
-        );
+        try {
+          let temperature = parseFloat(
+            document.getElementById("temperature").value,
+          );
+          let pValue = parseFloat(document.getElementById("pValue").value);
 
-        // handling the splited tokens for the words that are broken into pieces
-        if (selectedWord) {
-          let textBox = document.getElementById("userTextInput");
+          //Spin
+          let selectedWord = spintoChoose(
+            tokens,
+            probabilities,
+            temperature,
+            pValue,
+          );
 
-          textBox.value += selectedWord;
+          //Update text and wait for backend
+          if (selectedWord) {
+            let textBox = document.getElementById("userTextInput");
+            textBox.value += selectedWord;
 
-          document.getElementById("input_source").value = "auto-selected";
-          triggerPrediction();
-        } else {
-          alert("Error selecting a word!");
+            document.getElementById("input_source").value = "auto-selected";
+
+            //The button stays disabled (waiting)
+            await triggerPrediction();
+          } else {
+            alert("Error selecting a word!");
+          }
+        } catch (error) {
+          console.error("Spin error:", error);
+        } finally {
+          //Re-enable the button
+          if (spinButton) {
+            spinButton.disabled = false;
+            spinButton.style.cursor = "pointer";
+          }
         }
       }
+
       function resetPredictionUI() {
         originalTokens = [];
         originalProbabilities = [];
@@ -842,7 +883,7 @@
 
           document.getElementById("input_source").value = "typed";
 
-          triggerPrediction();
+          // triggerPrediction();
         }
       };
     </script>
